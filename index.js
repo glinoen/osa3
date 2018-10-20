@@ -2,6 +2,7 @@ const express = require('express')
 const app = express()
 const bodyParser = require('body-parser')
 const morgan = require('morgan')
+const cors = require('cors')
 
 let persons = [
     { name: 'Arto Hellas', number: '040-123456', id: 1 },
@@ -9,6 +10,9 @@ let persons = [
     { name: 'Arto Järvinen', number: '040-123456', id: 3 },
     { name: 'Lea Kutvonen', number: '040-123456', id: 4 }
 ]
+
+app.use(cors())
+
 app.use(bodyParser.json())
 
 morgan.token('tietoja', (req) =>{
@@ -52,7 +56,7 @@ function getRandomInt(min, max) {
 app.post('/api/persons', (request,res) => {
     const body = request.body
 
-    if (body.name === undefined || body.number === undefined) {
+    if (body.name === "" || body.number === "") {
         return res.status(400).json({error: 'name or number missing'})
     }
 
@@ -79,7 +83,7 @@ app.delete('/api/persons/:id', (request, res) => {
     res.status(204).end()
 })
 
-const PORT = 3001
+const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
 console.log(`Server running on port ${PORT}`)
 })
