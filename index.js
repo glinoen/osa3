@@ -11,6 +11,8 @@ let persons = [
     { name: 'Lea Kutvonen', number: '040-123456', id: 4 }
 ]
 
+app.use(express.static('build'))
+
 app.use(cors())
 
 app.use(bodyParser.json())
@@ -22,7 +24,7 @@ morgan.token('tietoja', (req) =>{
 app.use(morgan(':method :url :tietoja :status :res[content-length] - :response-time ms'))
 
 app.get('/api', (req, res) => {
-    res.send('<h1>Hello World!</h1>')
+    res.send('<h1>Tehtävä osa 3!</h1>')
 })
 
 app.get('/api/persons', (req, res) => {
