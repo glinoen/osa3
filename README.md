@@ -1,1 +1,1 @@
-https://dry-plains-77261.herokuapp.com/api/persons
+https://dry-plains-77261.herokuapp.com/
