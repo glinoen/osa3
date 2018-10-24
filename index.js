@@ -3,13 +3,7 @@ const app = express()
 const bodyParser = require('body-parser')
 const morgan = require('morgan')
 const cors = require('cors')
-
-let persons = [
-    { name: 'Arto Hellas', number: '040-123456', id: 1 },
-    { name: 'Martti Tienari', number: '040-123456', id: 2 },
-    { name: 'Arto Järvinen', number: '040-123456', id: 3 },
-    { name: 'Lea Kutvonen', number: '040-123456', id: 4 }
-]
+const Ucco = require('./models/ucco')
 
 app.use(express.static('build'))
 
@@ -17,76 +11,100 @@ app.use(cors())
 
 app.use(bodyParser.json())
 
-morgan.token('tietoja', (req) =>{
-    return JSON.stringify(req.body)
+morgan.token('tietoja', (req) => {
+  return JSON.stringify(req.body)
 })
 
 app.use(morgan(':method :url :tietoja :status :res[content-length] - :response-time ms'))
 
 app.get('/api', (req, res) => {
-    res.send('<h1>Tehtävä osa 3!</h1>')
+  res.send('<h1>Tehtävä osa 3!</h1>')
 })
 
 app.get('/api/persons', (req, res) => {
-    res.json(persons)
+  Ucco
+    .find({})
+    .then(uccos => {
+      res.json(uccos.map(Ucco.formatoi))
+    })
 })
 
-app.get('/api/persons/:id', (request, response) => {
-    const id = Number(request.params.id)
-    const person = persons.find(person => person.id === id)
-  
-    if ( person ) {
-      response.json(person)
-    } else {
-      response.status(404).end()
-    }
-  })
+app.get('/api/persons/:id', (req, res) => {
+  Ucco
+    .findById(req.params.id)
+    .then(jaba => {
+      if(jaba === null) {
+        return res.status(404).end()
+      } else {
+        return res.json(Ucco.formatoi(jaba))
+      }
+    })
+})
 
 app.get('/info', (req,res) => {
-    const paiva = new Date()
-    res.send('puhelinluettelossa ' +  persons.length + ' henkilön tiedot '+ "<br>" + "<br>" + paiva)
+  const paiva = new Date()
+  Ucco
+    .find({})
+    .then(result => {
+      res.send('puhelinluettelossa ' +  result.length + ' henkilön tiedot '+ '<br>' + '<br>' + paiva)
+    })
 })
 
-function getRandomInt(min, max) {
-    min = Math.ceil(min);
-    max = Math.floor(max);
-    return Math.floor(Math.random() * (max - min)) + min; //The maximum is exclusive and the minimum is inclusive
-}
-
-
-
 app.post('/api/persons', (request,res) => {
-    const body = request.body
+  const body = request.body
 
-    if (body.name === "" || body.number === "") {
-        return res.status(400).json({error: 'name or number missing'})
-    }
+  if (body.name === '' || body.number === '') {
+    return res.status(400).send({ error: 'name or number missing' })
+  }
 
-    tutkija = persons.find(person => person.name === body.name)
-    if (tutkija) {
-        return res.status(400).json({error: 'name must be unique'})
-    }
+  const person = new Ucco( {
+    name: body.name,
+    number: body.number
+  })
 
-    const person = {
-        name: body.name,
-        number: body.number,
-        id: getRandomInt(1,1000000)
-    }
+  Ucco
+    .find({ name: person.name })
+    .then(name => {
+      if(name.length === 0){
+        person
+          .save()
+          .then(savedPerson => {
+            res.json(Ucco.formatoi(savedPerson))
+          })
+      }else {
+        return res.status(400).send({ error: 'name must be unique' })
+      }
+    })
+})
 
-    persons = persons.concat(person)
+app.put('/api/persons/:id', (req,res) => {
+  const body = req.body
+  const person = {
+    name: body.name,
+    number: body.number
+  }
 
-    res.json(person)
+  Ucco
+    .findByIdAndUpdate(req.params.id, person, { new : true })
+    .then(savedPerson => {
+      res.json(Ucco.formatoi(savedPerson))
+    })
 })
 
 app.delete('/api/persons/:id', (request, res) => {
-    const id = Number(request.params.id)
-    persons = persons.filter(person => person.id !== id)
-
-    res.status(204).end()
+  Ucco
+    .findByIdAndRemove(request.params.id)
+    .then(() => {
+      res.status(204).end()
+    })
+    .catch(() => {
+      res.status(400).send({ error : 'väärä id' })
+    })
+  res.status(204).end()
 })
 
 const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
-console.log(`Server running on port ${PORT}`)
+  console.log(`Server running on port ${PORT}`)
 })
 
